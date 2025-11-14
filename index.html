@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人内容收藏夹 MVP</title>
+    <style>
+        /* CSS 样式：确保在手机上看起来像一个 App */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        .app-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            min-height: 100vh;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+        header {
+            background-color: #5b5bdc;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2em;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .content {
+            padding: 15px;
+        }
+
+        /* 主页样式 */
+        #search-bar {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        #link-list {
+            list-style: none;
+            padding: 0;
+        }
+        .link-card {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #5b5bdc;
+            cursor: pointer;
+        }
+        .link-card h4 {
+            margin-top: 0;
+            color: #333;
+            line-height: 1.4;
+        }
+        .link-card small {
+            color: #777;
+        }
+        
+        /* 浮动操作按钮 (FAB) */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: calc(50% - 300px + 30px); /* 保持在右下角 */
+            background-color: #5b5bdc;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 50px;
+            font-size: 2em;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+        /* 添加链接页样式 */
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #5b5bdc;
+        }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .save-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            width: 100%;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+
+        /* 隐藏/显示页面 */
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        /* 导航返回按钮 */
+        .back-btn {
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            color: white;
+            text-decoration: none;
+            font-size: 1.2em;
+        }
+                /* 删除按钮样式 */
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #dc3545; /* 红色 */
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-left: 10px;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+            flex-shrink: 0; /* 确保按钮在 flex 布局中不被压缩 */
+        }
+        .delete-btn:hover {
+            background-color: #f8d7da;
+        }
+                /* 编辑按钮样式 */
+        .edit-btn {
+            background: none;
+            border: none;
+            color: #007bff; /* 蓝色 */
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+            flex-shrink: 0; 
+            margin-left: 5px; /* 稍微和删除按钮隔开 */
+        }
+        .edit-btn:hover {
+            background-color: #e2f0ff;
+        }
+
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <div id="home-page" class="page active">
+        <header>
+            我的灵感收藏
+        </header>
+        <div class="content">
+            <input type="search" id="search-bar" placeholder="搜索标题或标签...">
+            
+            <ul id="link-list">
+                <li class="link-card" onclick="window.open('https://example.com/demo', '_blank')">
+                    <h4>示例：如何制作第一个 Web App</h4>
+                    <small>#编程 #教程 #待看</small>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="fab" onclick="showPage('add-page')">
+            +
+        </div>
+    </div>
+    
+    <div id="add-page" class="page">
+        <header>
+            <a href="#" class="back-btn" onclick="showPage('home-page')">← 返回</a>
+            添加新内容
+        </header>
+        <div class="content">
+            <form id="add-form">
+                <div class="input-group">
+                    <label for="link-url">链接 (URL)</label>
+                    <input type="url" id="link-url" required placeholder="粘贴视频或文章链接">
+                </div>
+                
+                <div class="input-group">
+                    <label for="link-title">标题 (手动输入)</label>
+                    <input type="text" id="link-title" required placeholder="输入一个清晰的标题">
+                </div>
+                
+                <div class="input-group">
+                    <label for="link-tags">标签 (用逗号隔开)</label>
+                    <input type="text" id="link-tags" placeholder="例如：美食, 教程, 编程">
+                </div>
+                
+                <button type="submit" class="save-btn">保存到我的收藏夹</button>
+            </form>
+        </div>
+    </div>
+        <div id="edit-page" class="page">
+        <header>
+            <a href="#" class="back-btn" onclick="showPage('home-page')">← 返回</a>
+            编辑内容
+        </header>
+        <div class="content">
+            <form id="edit-form">
+                <input type="hidden" id="edit-link-id">
+                
+                <div class="input-group">
+                    <label for="edit-link-url">链接 (URL) - **不可修改**</label>
+                    <input type="url" id="edit-link-url" readonly style="background-color: #eee;">
+                </div>
+                
+                <div class="input-group">
+                    <label for="edit-link-title">标题</label>
+                    <input type="text" id="edit-link-title" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="edit-link-tags">标签 (用逗号隔开)</label>
+                    <input type="text" id="edit-link-tags" placeholder="例如：美食, 教程, 编程">
+                </div>
+                
+                <button type="submit" class="save-btn" style="background-color: #ffc107; color: #333;">更新内容</button>
+            </form>
+        </div>
+    </div>
+
+
+</div>
+
+<script>
+    // JavaScript 逻辑部分
+    
+    // 全局函数：切换页面显示
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(page => {
+            page.classList.remove('active');
+        });
+        document.getElementById(pageId).classList.add('active');
+    }
+
+    // MVP 阶段我们使用浏览器的 Local Storage 来保存数据
+    const STORAGE_KEY = 'personalLinkCollection';
+
+    // 辅助函数：从本地存储加载数据
+    function loadLinks() {
+        const json = localStorage.getItem(STORAGE_KEY);
+        return json ? JSON.parse(json) : [];
+    }
+    
+    // 辅助函数：保存数据到本地存储
+    function saveLinks(data) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    // 2. 渲染（显示）数据功能 (已更新：添加编辑按钮)
+    function renderLinks(links) {
+        const listElement = document.getElementById('link-list');
+        listElement.innerHTML = ''; // 清空现有列表
+        
+        if (links.length === 0) {
+            listElement.innerHTML = '<p style="text-align: center; color: #777; padding-top: 20px;">没有找到匹配的内容！</p>';
+            return;
+        }
+
+        links.forEach(link => {
+            const listItem = document.createElement('li');
+            listItem.className = 'link-card';
+            
+            // 格式化标签显示
+            const tagHtml = link.tags.map(tag => `<small style="color: #007bff; margin-right: 5px;">#${tag}</small>`).join(' ');
+
+            listItem.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div onclick="window.open('${link.url}', '_blank')" style="flex-grow: 1; cursor: pointer;">
+                        <h4>${link.title}</h4>
+                        <div>${tagHtml}</div>
+                    </div>
+                    <div style="display: flex;">
+                        <button class="edit-btn" onclick="event.stopPropagation(); loadLinkForEdit(${link.id})">✏️</button>
+                        <button class="delete-btn" onclick="event.stopPropagation(); deleteLink(${link.id})">🗑️</button>
+                    </div>
+                </div>
+            `;
+            listElement.appendChild(listItem);
+        });
+    }
+
+    // 5. 删除功能
+    function deleteLink(id) {
+        if (!confirm('确定要删除此收藏吗？')) {
+            return;
+        }
+
+        let data = loadLinks();
+        data = data.filter(link => link.id !== id);
+        
+        saveLinks(data);
+        renderLinks(data);
+    }
+    
+    // 6. 新增：加载链接数据到编辑表单
+    function loadLinkForEdit(id) {
+        const data = loadLinks();
+        const linkToEdit = data.find(link => link.id === id);
+        
+        if (linkToEdit) {
+            document.getElementById('edit-link-id').value = linkToEdit.id;
+            document.getElementById('edit-link-url').value = linkToEdit.url;
+            document.getElementById('edit-link-title').value = linkToEdit.title;
+            document.getElementById('edit-link-tags').value = linkToEdit.tags.join(', '); // 标签用逗号和空格连接
+            
+            showPage('edit-page'); // 切换到编辑页面
+        } else {
+            alert('未找到要编辑的内容！');
+        }
+    }
+    
+    // 7. 新增：编辑表单提交（更新数据）
+    document.getElementById('edit-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const linkId = parseInt(document.getElementById('edit-link-id').value);
+        const newTitle = document.getElementById('edit-link-title').value;
+        const newTags = document.getElementById('edit-link-tags').value.split(/[,，\s]+/).map(tag => tag.trim()).filter(tag => tag.length > 0);
+        
+        let data = loadLinks();
+        
+        // 找到要更新的链接
+        const linkIndex = data.findIndex(link => link.id === linkId);
+        
+        if (linkIndex !== -1) {
+            data[linkIndex].title = newTitle;
+            data[linkIndex].tags = newTags;
+            
+            saveLinks(data);
+            renderLinks(data);
+            showPage('home-page'); // 返回主页
+        } else {
+            alert('更新失败：未找到原始链接。');
+        }
+    });
+
+    // 1. 数据保存功能 (监听添加表单提交)
+    document.getElementById('add-form').addEventListener('submit', function(e) {
+        e.preventDefault(); 
+        
+        const newLink = {
+            id: Date.now(), 
+            url: document.getElementById('link-url').value,
+            title: document.getElementById('link-title').value,
+            tags: document.getElementById('link-tags').value.split(/[,，\s]+/).map(tag => tag.trim()).filter(tag => tag.length > 0)
+        };
+        
+        const data = loadLinks();
+        data.unshift(newLink); 
+        saveLinks(data);
+        
+        this.reset();
+        renderLinks(data);
+        showPage('home-page');
+    });
+
+    // 4. 实时搜索功能 (监听搜索栏输入)
+    document.getElementById('search-bar').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const allLinks = loadLinks(); 
+        
+        if (searchTerm === '') {
+            renderLinks(allLinks); 
+            return;
+        }
+
+        const filteredLinks = allLinks.filter(link => {
+            const titleMatch = link.title.toLowerCase().includes(searchTerm);
+            const tagMatch = link.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+
+            return titleMatch || tagMatch;
+        });
+
+        renderLinks(filteredLinks); 
+    });
+
+    // 3. 页面初始化：加载并显示数据
+    document.addEventListener('DOMContentLoaded', () => {
+        const initialLinks = loadLinks();
+        renderLinks(initialLinks);
+    });
+</script>
+
+
+
+
+</body>
+</html>
